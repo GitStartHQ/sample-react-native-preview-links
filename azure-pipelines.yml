@@ -1,0 +1,21 @@
+jobs:
+  - job: 'preview_links'
+    pool:
+      vmImage: 'macOS 10.14'
+    condition: eq(variables['Build.Reason'], 'PullRequest')
+    variables:
+      - group: Android keyStore Variables
+    steps:
+      - script: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
+        displayName: 'Intalling NVM'
+
+      - script: npm config delete prefix && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" && nvm install 8 && nvm alias default 8
+        displayName:  'Installing Node 8 and npm start'
+
+      - script:  npm config delete prefix && export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" && nvm use 8 && node --version && npm install -g yarn && yarn install && cd ios && pod install && cd .. && ./node_modules/.bin/react-native run-ios --configuration Release && ./node_modules/.bin/react-native bundle --entry-file index.js --bundle-output ./ios/build/Bump/Build/Products/Release-iphonesimulator/Bump.app/main.jsbundle --assets-dest ./ios/build/Bump/Build/Products/Release-iphonesimulator/Bump.app
+        displayName: 'Building iOS version'
+
+      - script: export PULL_REQUEST_ID=$(System.PullRequest.PullRequestNumber) && export GITHUB_ORG=$(cut -d'/' -f1 <<<"$(Build.Repository.Name)") && export GITHUB_REPO=$(cut -d'/' -f2 <<<"$(Build.Repository.Name)") && export PLATFORM=ios && cd ios && curl https://s3-us-west-2.amazonaws.com/murcul-ci-tools/mobile-reviewer --output mobile-reviewer && chmod +x ./mobile-reviewer && ./mobile-reviewer
+        displayName: 'Publishing iOS to appetize'
+
+      - script: export APPETIZE_AUTH_TOKEN=$(APPETIZE_AUTH_TOKEN) && export GITHUB_AUTH_TOKEN=$(GITHUB_AUTH_TOKEN) && export PULL_REQUEST_ID=$(System.PullRequest.PullRequestNumber) && export GITHUB_ORG=$(cut -d'/' -f1 <<<"$(Build.Repository.Name)") && export GITHUB_REPO=$(cut -d'/' -f2 <<<"$(Build.Repository.Name)")
