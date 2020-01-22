@@ -4,7 +4,7 @@ jobs:
       vmImage: 'macOS 10.14'
     condition: eq(variables['Build.Reason'], 'PullRequest')
     variables:
-      - group: Android keyStore Variables
+      - group: Token Variables
     steps:
       - script: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
         displayName: 'Intalling NVM'
